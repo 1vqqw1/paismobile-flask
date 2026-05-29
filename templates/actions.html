@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Акции и скидки — ПайсМобайл{% endblock %}
+{% block body_class %}actions-page{% endblock %}
+{% block content %}
+<section class="hero hero-dark compact">
+  <p class="kicker">Специальные предложения</p>
+  <h1>Акции и скидки</h1>
+  <p>Божественные предложения для наших абонентов — не упустите шанс сэкономить</p>
+</section>
+
+<section class="container page-tabs">
+  <a href="{{ url_for('tariffs') }}">Все тарифы</a>
+  <a class="active" href="{{ url_for('actions') }}">Акции</a>
+  <a href="{{ url_for('cities') }}">Выбрать город</a>
+</section>
+
+<section class="container promo-main">
+  <div class="promo-main-copy">
+    <span class="badge static">Горячее предложение</span>
+    <h2>Первые 3 месяца тарифа «Архангел» — за полцены</h2>
+    <p>Подключите тариф «Архангел» до конца месяца и платите всего 345 ₽/мес первые 3 месяца. Безлимитные звонки, 40 ГБ интернета и все мессенджеры без ограничений.</p>
+    <a class="gold-btn" href="{{ url_for('payment', tariff_id='arkhangel') }}">Подключить со скидкой</a>
+    <small>Осталось 12 дней до конца акции</small>
+  </div>
+  <img class="promo-symbol-image" src="{{ url_for('static', filename='img/actions/hot_offer_symbol.png') }}" alt="">
+</section>
+
+<section class="container section no-top actions-cards-section">
+  <div class="promo-grid">
+    {% for promo in promos %}
+    <article class="promo-card promo-card-{{ promo.type }} {% if promo.expired %}promo-expired{% endif %}">
+      <div class="promo-cover">
+        <span>{{ promo.tag }}</span>
+        {% if promo.type == 'transfer' %}
+        <img class="promo-cover-icon-image" src="{{ url_for('static', filename='img/actions/promo_transfer.png') }}" alt="">
+        {% elif promo.type == 'bonus_gb' %}
+        <img class="promo-cover-icon-image" src="{{ url_for('static', filename='img/actions/promo_bonus_gb.png') }}" alt="">
+        {% elif promo.type == 'birthday' %}
+        <img class="promo-cover-icon-image" src="{{ url_for('static', filename='img/actions/promo_birthday.png') }}" alt="">
+        {% elif promo.type == 'cashback' %}
+        <img class="promo-cover-icon-image" src="{{ url_for('static', filename='img/actions/promo_cashback.png') }}" alt="">
+        {% elif promo.type == 'roaming' %}
+        <img class="promo-cover-icon-image" src="{{ url_for('static', filename='img/actions/promo_roaming.png') }}" alt="">
+        {% elif promo.type == 'bundle' %}
+        <img class="promo-cover-icon-image" src="{{ url_for('static', filename='img/actions/promo_bundle.png') }}" alt="">
+        {% endif %}
+      </div>
+      <div class="promo-card-body">
+        <h3>{{ promo.title }}</h3>
+        <p>{{ promo.text }}</p>
+        <small>{{ promo.period or 'До 31 декабря 2026' }}</small>
+        {% if promo.expired %}
+        <button class="outline-btn full disabled-btn" type="button" disabled>Истекло</button>
+        {% else %}
+        <form method="post">
+          <input type="hidden" name="promo_id" value="{{ promo.id }}">
+          <button class="outline-btn full" type="submit">Активировать</button>
+        </form>
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="container promocode">
+  <h2>У вас есть промокод?</h2>
+  <p>Введите промокод, чтобы активировать персональное предложение</p>
+  <form method="post">
+    <input name="promo" placeholder="Введите промокод">
+    <button class="gold-btn" type="submit">Применить</button>
+  </form>
+</section>
+{% endblock %}

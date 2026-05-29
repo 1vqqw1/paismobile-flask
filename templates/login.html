@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Вход в кабинет — ПайсМобайл{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+{% block content %}
+<section class="auth-wrap">
+  <form class="auth-card" method="post">
+    <img class="auth-symbol-img login-symbol-img" src="{{ url_for('static', filename='img/login_symbol_attached.png') }}" alt="">
+    <h1>Вход в кабинет</h1>
+    <p>Войдите, чтобы управлять вашим тарифом</p>
+    <label>Телефон или email<input class="phone-login-mask" name="login" placeholder="+7 (___) ___-__-__" autocomplete="username" required></label>
+    <label>Пароль<input name="password" type="password" placeholder="Введите пароль" required></label>
+    <div class="form-row between"><label class="checkbox"><input type="checkbox"> Запомнить меня</label><a href="{{ url_for('forgot') }}">Забыли пароль?</a></div>
+    <button class="gold-btn full" type="submit">Войти</button>
+    <div class="auth-separator">или</div>
+    <p>Ещё нет аккаунта? <a href="{{ url_for('register') }}">Зарегистрироваться</a></p>
+  </form>
+</section>
+{% endblock %}

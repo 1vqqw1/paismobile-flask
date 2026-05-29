@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Выбор города — ПайсМобайл{% endblock %}
+{% block body_class %}cities-page{% endblock %}
+{% block content %}
+<section class="hero hero-dark compact">
+  <p class="kicker">География покрытия</p>
+  <h1>Выберите ваш город</h1>
+  <p>Тарифы и доступные услуги зависят от вашего региона. Нажмите на город, чтобы увидеть актуальные предложения.</p>
+</section>
+
+<section class="container page-tabs">
+  <a href="{{ url_for('tariffs') }}">Все тарифы</a>
+  <a href="{{ url_for('actions') }}">Акции</a>
+  <a class="active" href="{{ url_for('cities') }}">Выбрать город</a>
+</section>
+
+<section class="container city-search-block">
+  <form class="city-search" method="get">
+    <input name="q" type="search" value="{{ query }}" placeholder="Найти город..." aria-label="Найти город">
+    <button class="gold-btn tiny" type="submit">Найти</button>
+  </form>
+</section>
+
+<section class="container city-list">
+  {% for region in cities %}
+    <div class="region-block">
+      <h2>{{ region.region }}</h2>
+      <div class="city-grid">
+        {% for city in region.city_list %}
+          <a class="city-card" href="{{ url_for('select_city', city=city.name) }}">
+            <h3>{{ city.name }}</h3>
+            <p>{{ city.area }}</p>
+            <small>Сеть: <b>{{ city.network }}</b> &nbsp; Тарифов: <b>{{ city.tariffs }}</b></small>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  {% else %}
+    <p class="empty-text">Город не найден. Попробуйте другой запрос.</p>
+  {% endfor %}
+</section>
+
+<section class="container coverage-note">
+  <span class="note-symbol" aria-hidden="true"></span>
+  <div><h3>Покрытие постоянно расширяется</h3><p>Некоторых городов нет в списке. Мы ежедневно работаем над расширением. Вскоре ваш город появится в списках.</p></div>
+</section>
+{% endblock %}

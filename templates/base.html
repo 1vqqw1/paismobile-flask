@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}ПайсМобайл{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <header class="topbar">
+    <a href="{{ url_for('index') }}" class="brand" aria-label="ПайсМобайл">
+      <span class="brand-mark" aria-hidden="true"><img src="{{ url_for('static', filename='img/logo_original.png') }}" alt=""></span>
+      <span class="brand-text">ПАЙС<span>МОБАЙЛ</span></span>
+    </a>
+
+    {% if simple_header %}
+      <a class="top-back" href="{{ back_url or url_for('index') }}">← {{ back_text or 'На главную' }}</a>
+    {% else %}
+      <nav class="main-nav">
+        <a href="{{ url_for('tariffs') }}" class="{% if request.endpoint == 'tariffs' %}active{% endif %}">Тарифы</a>
+        <a href="{{ url_for('actions') }}" class="{% if request.endpoint == 'actions' %}active{% endif %}">Акции</a>
+        <a href="{{ url_for('cities') }}" class="{% if request.endpoint == 'cities' %}active{% endif %}">Город</a>
+      </nav>
+      <div class="top-actions">
+        {% if current_user %}
+          <details class="user-menu">
+            <summary class="user-chip"><span>{{ current_user.first_name[:1] or 'А' }}</span>{{ current_user.first_name or 'Кабинет' }}</summary>
+            <div class="user-menu-dropdown">
+              <a href="{{ url_for('profile') }}">Личный кабинет</a>
+              <a href="{{ url_for('logout') }}">Выйти из аккаунта</a>
+            </div>
+          </details>
+        {% else %}
+          <a class="outline-btn small" href="{{ url_for('login') }}">Личный кабинет</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-wrap">
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <span>© 2026 ПайсМобайл. Все права защищены.</span>
+  </footer>
+
+  <script>
+    function paisLocalPhoneDigits(value) {
+      var raw = value || '';
+      var digits = raw.replace(/\D/g, '');
+      var trimmed = raw.trim();
+
+      if (trimmed.indexOf('+7') === 0 && digits.charAt(0) === '7') {
+        digits = digits.slice(1);
+      } else if (digits.length === 11 && digits.charAt(0) === '7') {
+        digits = digits.slice(1);
+      }
+
+      return digits.slice(0, 10);
+    }
+
+    function paisFormatPhone(value) {
+      var digits = paisLocalPhoneDigits(value);
+      if (!digits.length) return '';
+
+      var result = '+7';
+      if (digits.length > 0) result += ' (' + digits.slice(0, 3);
+      if (digits.length >= 3) result += ')';
+      if (digits.length > 3) result += ' ' + digits.slice(3, 6);
+      if (digits.length > 6) result += '-' + digits.slice(6, 8);
+      if (digits.length > 8) result += '-' + digits.slice(8, 10);
+      return result;
+    }
+
+    function paisPhoneInput(field, allowEmail) {
+      field.addEventListener('keydown', function (event) {
+        if (allowEmail && /[a-zA-Zа-яА-Я@]/.test(field.value || '')) return;
+        if (event.key !== 'Backspace' && event.key !== 'Delete') return;
+
+        var digits = paisLocalPhoneDigits(field.value);
+        if (!digits.length) return;
+
+        event.preventDefault();
+        if (field.selectionStart !== field.selectionEnd) {
+          field.value = '';
+        } else {
+          digits = digits.slice(0, -1);
+          field.value = paisFormatPhone(digits);
+        }
+        field.setSelectionRange(field.value.length, field.value.length);
+      });
+
+      field.addEventListener('input', function () {
+        var value = field.value || '';
+        if (allowEmail && /[a-zA-Zа-яА-Я@]/.test(value)) return;
+        field.value = paisFormatPhone(value);
+        field.setSelectionRange(field.value.length, field.value.length);
+      });
+    }
+
+
+    function paisCardDigits(value) {
+      return (value || '').replace(/\D/g, '').slice(0, 16);
+    }
+
+    function paisFormatCard(value) {
+      var digits = paisCardDigits(value);
+      if (!digits.length) return '';
+      return digits.match(/.{1,4}/g).join(' ');
+    }
+
+    function paisCardInput(field) {
+      field.addEventListener('keydown', function (event) {
+        if (event.key !== 'Backspace' && event.key !== 'Delete') return;
+        var digits = paisCardDigits(field.value);
+        if (!digits.length) return;
+        event.preventDefault();
+        if (field.selectionStart !== field.selectionEnd) {
+          field.value = '';
+        } else {
+          digits = digits.slice(0, -1);
+          field.value = paisFormatCard(digits);
+        }
+        field.setSelectionRange(field.value.length, field.value.length);
+      });
+
+      field.addEventListener('input', function () {
+        field.value = paisFormatCard(field.value);
+        field.setSelectionRange(field.value.length, field.value.length);
+      });
+    }
+
+    function paisExpiryDigits(value) {
+      return (value || '').replace(/\D/g, '').slice(0, 4);
+    }
+
+    function paisFormatExpiry(value) {
+      var digits = paisExpiryDigits(value);
+      if (!digits.length) return '';
+      if (digits.length <= 2) return digits;
+      return digits.slice(0, 2) + '/' + digits.slice(2, 4);
+    }
+
+    function paisExpiryInput(field) {
+      field.addEventListener('keydown', function (event) {
+        if (event.key !== 'Backspace' && event.key !== 'Delete') return;
+        var digits = paisExpiryDigits(field.value);
+        if (!digits.length) return;
+        event.preventDefault();
+        if (field.selectionStart !== field.selectionEnd) {
+          field.value = '';
+        } else {
+          digits = digits.slice(0, -1);
+          field.value = paisFormatExpiry(digits);
+        }
+        field.setSelectionRange(field.value.length, field.value.length);
+      });
+
+      field.addEventListener('input', function () {
+        field.value = paisFormatExpiry(field.value);
+        field.setSelectionRange(field.value.length, field.value.length);
+      });
+    }
+
+    document.querySelectorAll('.phone-mask').forEach(function (field) {
+      paisPhoneInput(field, false);
+    });
+    document.querySelectorAll('.phone-login-mask').forEach(function (field) {
+      paisPhoneInput(field, true);
+    });
+    document.querySelectorAll('.expiry-mask').forEach(function (field) {
+      paisExpiryInput(field);
+    });
+    document.querySelectorAll('.card-mask').forEach(function (field) {
+      paisCardInput(field);
+    });
+
+    document.querySelectorAll('.fill-card-btn').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var form = button.closest('form');
+        if (!form) return;
+        var card = form.querySelector('input[name="card"]');
+        var holder = form.querySelector('input[name="holder"]');
+        var expire = form.querySelector('input[name="expire"]');
+        var cvv = form.querySelector('input[name="cvv"]');
+        if (card) card.value = button.dataset.card || '';
+        if (holder) holder.value = button.dataset.holder || '';
+        if (expire) expire.value = paisFormatExpiry(button.dataset.expire || '');
+        if (cvv) cvv.value = button.dataset.cvv || '';
+      });
+    });
+
+    function paisHideFlashes() {
+      document.querySelectorAll('.flash-wrap').forEach(function (item) {
+        item.style.display = 'none';
+      });
+    }
+
+
+
+    document.querySelectorAll('.constructor-live').forEach(function (form) {
+      var minuteInput = form.querySelector('input[name="minutes"]');
+      var internetInput = form.querySelector('input[name="internet"]');
+      var smsInput = form.querySelector('input[name="sms"]');
+      var minuteOutput = form.querySelector('[data-output="minutes"]');
+      var internetOutput = form.querySelector('[data-output="internet"]');
+      var smsOutput = form.querySelector('[data-output="sms"]');
+      var priceOutput = form.querySelector('[data-output="price"]');
+
+      function updateConstructor() {
+        var minutes = parseInt(minuteInput.value || '0', 10);
+        var internet = parseInt(internetInput.value || '0', 10);
+        var sms = parseInt(smsInput.value || '0', 10);
+        var price = Math.round(160 + minutes * 0.32 + internet * 5 + sms * 0.6);
+        if (minuteOutput) minuteOutput.innerHTML = '<strong>' + minutes + '</strong><span>мин</span>';
+        if (internetOutput) internetOutput.innerHTML = '<strong>' + internet + '</strong><span>ГБ</span>';
+        if (smsOutput) smsOutput.innerHTML = '<strong>' + sms + '</strong><span>шт</span>';
+        if (priceOutput) priceOutput.textContent = price;
+      }
+
+      [minuteInput, internetInput, smsInput].forEach(function (input) {
+        if (input) input.addEventListener('input', updateConstructor);
+      });
+      updateConstructor();
+    });
+
+    function paisCloseUserMenus() {
+      document.querySelectorAll('.user-menu[open]').forEach(function (menu) {
+        menu.removeAttribute('open');
+      });
+    }
+
+    document.addEventListener('click', function (event) {
+      var insideMenu = event.target.closest('.user-menu');
+      if (!insideMenu) {
+        paisCloseUserMenus();
+      }
+    });
+
+    if (document.querySelector('.flash-wrap')) {
+      setTimeout(paisHideFlashes, 5000);
+      document.addEventListener('click', paisHideFlashes, { once: true });
+    }
+  </script>
+</body>
+</html>

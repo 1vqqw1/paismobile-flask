@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}ПайсМобайл — связь, дарованная небесами{% endblock %}
+{% block body_class %}home-page{% endblock %}
+{% block content %}
+<section class="hero hero-light">
+  <img class="hero-badge-img" src="{{ url_for('static', filename='img/hero_badge_original.png') }}" alt="Божественная связь">
+  <h1>Связь, дарованная <em>небесами</em></h1>
+  <p>Пайсмобайл — мобильный оператор нового поколения.<br>Безграничные возможности, ангельская скорость, небесное качество связи по всей России</p>
+  <div class="hero-actions">
+    <a class="gold-btn" href="{{ url_for('tariffs') }}">Выбрать тариф</a>
+    {% if current_user %}
+      <a class="text-btn" href="{{ url_for('my_tariff') }}">Отказаться от тарифа</a>
+    {% else %}
+      <a class="text-btn" href="{{ url_for('register') }}">Регистрация</a>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section choose-section">
+  <img class="section-symbol-img" src="{{ url_for('static', filename='img/angel_symbol_original.png') }}" alt="">
+  <img class="choose-kicker-img" src="{{ url_for('static', filename='img/tariff_plans_original.png') }}" alt="Тарифные планы">
+  <h2>Выберите свой путь</h2>
+  <div class="tariff-grid three">
+    {% for tariff in tariffs %}
+      {% include '_tariff_card_home.html' %}
+    {% endfor %}
+  </div>
+</section>
+
+<section class="dark-section benefits">
+  <p class="kicker">Преимущества</p>
+  <h2>Почему выбирают нас</h2>
+  <div class="benefit-grid">
+    <article><img class="benefit-icon" src="{{ url_for('static', filename='img/benefit_coverage.png') }}" alt=""><h3>Покрытие</h3><p>5G и 4G LTE связь в более чем 1000 городах России</p></article>
+    <article><img class="benefit-icon" src="{{ url_for('static', filename='img/benefit_protection.png') }}" alt=""><h3>Защита</h3><p>Божественная защита данных и шифрование всех соединений</p></article>
+    <article><img class="benefit-icon" src="{{ url_for('static', filename='img/benefit_speed.png') }}" alt=""><h3>Скорость</h3><p>Молниеносный интернет — скорость до 1 Гбит/с на тарифе Престол</p></article>
+    <article><img class="benefit-icon" src="{{ url_for('static', filename='img/benefit_roaming.png') }}" alt=""><h3>Роуминг</h3><p>Выгодный роуминг в 150+ странах мира без скрытых платежей</p></article>
+  </div>
+</section>
+{% endblock %}

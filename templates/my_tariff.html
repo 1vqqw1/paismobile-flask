@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Мой тариф — ПайсМобайл{% endblock %}
+{% block body_class %}cabinet-page my-tariff-page{% endblock %}
+{% block content %}
+{% include '_cabinet_tabs.html' %}
+
+<section class="container cabinet-title">
+  <h1>Мой тариф</h1>
+</section>
+
+{% if tariff %}
+{% set calls_unlimited = '∞' in tariff.calls or 'Безлимит' in tariff.calls %}
+{% set sms_unlimited = '∞' in tariff.sms or 'Безлимит' in tariff.sms %}
+{% set internet_unlimited = '∞' in tariff.internet or 'Безлимит' in tariff.internet %}
+{% set title_name = tariff.name[:1]|upper ~ tariff.name[1:]|lower %}
+<section class="container white-panel tariff-summary">
+  <div class="tariff-heading">
+    <div class="tariff-name-block">
+      <img class="mini-symbol" src="{{ url_for('static', filename='img/my_tariff_symbol_attached.png') }}" alt="">
+      <div class="tariff-main-meta">
+        <h2>{{ title_name }}</h2>
+        <p>Активен</p>
+      </div>
+    </div>
+    <div class="summary-price">
+      <div class="summary-price-main"><strong>{{ tariff.price }}</strong><span>₽/мес</span></div>
+      <small>{% if next_pay %}Следующее списание: {{ next_pay }}{% else %}Нет списаний{% endif %}</small>
+    </div>
+  </div>
+
+  <div class="tariff-separator"></div>
+
+  <div class="usage-grid">
+    <article>
+      <span>Звонки</span>
+      <strong>{% if calls_unlimited %}<img class="infinity-img" src="{{ url_for('static', filename='img/infinity_symbol_clean.png') }}" alt="∞">{% else %}{{ tariff.calls.split(' ')[0] }}{% endif %}</strong>
+      <small>{% if calls_unlimited %}Безлимитные звонки{% else %}{{ tariff.calls }}{% endif %}</small>
+    </article>
+    <article class="internet-card">
+      <span>Интернет</span>
+      <div class="bar"><i></i></div>
+      <strong>{% if internet_unlimited %}Безлимит{% else %}{{ tariff.internet }}{% endif %}</strong>
+      <small>{% if internet_unlimited %}Безлимит{% else %}из {{ tariff.internet }}{% endif %}</small>
+    </article>
+    <article>
+      <span>SMS</span>
+      <strong>{% if sms_unlimited %}<img class="infinity-img" src="{{ url_for('static', filename='img/infinity_symbol_clean.png') }}" alt="∞">{% else %}{{ tariff.sms.split(' ')[0] }}{% endif %}</strong>
+      <small>{% if sms_unlimited %}Безлимитные SMS{% else %}{{ tariff.sms }}{% endif %}</small>
+    </article>
+  </div>
+
+  <div class="summary-actions">
+    <a class="outline-btn" href="{{ url_for('tariffs') }}">Сменить тариф</a>
+    <a class="outline-btn" href="{{ url_for('topup') }}">Пополнить баланс</a>
+  </div>
+</section>
+{% else %}
+<section class="container white-panel tariff-summary no-tariff-summary">
+  <div class="tariff-heading">
+    <div class="tariff-name-block">
+      <img class="mini-symbol" src="{{ url_for('static', filename='img/my_tariff_symbol_attached.png') }}" alt="">
+      <div class="tariff-main-meta">
+        <h2>Тариф не подключён</h2>
+        <p>Не активен</p>
+      </div>
+    </div>
+  </div>
+  <div class="tariff-separator"></div>
+  <div class="summary-actions"><a class="gold-btn" href="{{ url_for('tariffs') }}">Выбрать тариф</a><a class="outline-btn" href="{{ url_for('topup') }}">Пополнить баланс</a></div>
+</section>
+{% endif %}
+
+{% if tariff %}
+<section class="container white-panel info-list services-list">
+  <h2>Включённые услуги</h2>
+  <div><span>Звонки</span><b>{% if calls_unlimited %}Безлимит{% else %}{{ tariff.calls }}{% endif %}</b></div>
+  <div><span>Мобильный интернет</span><b>{% if internet_unlimited %}Безлимит{% else %}{{ tariff.internet }}{% endif %}</b></div>
+  <div><span>SMS</span><b>{% if sms_unlimited %}Безлимит{% else %}{{ tariff.sms }}{% endif %}</b></div>
+  <div><span>Социальные сети</span><b>Без лимита</b></div>
+  <div><span>Раздача интернета</span><b>{% if tariff.id == 'prestol' %}Без лимита{% else %}10 ГБ{% endif %}</b></div>
+  <div><span>Мессенджеры</span><b>Без лимита</b></div>
+</section>
+{% endif %}
+
+{% if tariff and payment_info %}
+<section class="container white-panel info-list payment-list">
+  <h2>Платёжная информация</h2>
+  <div><span>Дата подключения</span><b>{{ pay_date }}</b></div>
+  <div><span>Период оплаты</span><b>Ежемесячно</b></div>
+  <div><span>Способ оплаты</span><b>{% if user.card %}•••• {{ user.card.last4 }}{% else %}—{% endif %}</b></div>
+  <div><span>Следующее списание</span><b>{{ next_pay }}</b></div>
+  <div><span>Город</span><b>{{ user.city or 'Москва' }}</b></div>
+</section>
+{% endif %}
+{% endblock %}

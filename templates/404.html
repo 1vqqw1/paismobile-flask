@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}404 — ПайсМобайл{% endblock %}
+{% block body_class %}auth-page error404-page{% endblock %}
+{% block content %}
+<section class="not-found exact-404">
+  <div class="not-found-symbol" aria-hidden="true"></div>
+  <div class="big-code">404</div>
+  <p class="kicker">Страница не найдена</p>
+  <h1>Эта страница вознеслась</h1>
+  <p class="not-found-copy">Страница, которую вы ищете, больше не существует или была перемещена.<br>Возможно, вы перешли по устаревшей ссылке.</p>
+  <div class="hero-actions not-found-actions">
+    <a class="gold-btn" href="{{ url_for('index') }}">На главную</a>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,10 @@
+<section class="cabinet-tabs container">
+  <div class="tabs-left">
+    <a href="{{ url_for('profile') }}" class="tab-link {% if request.endpoint == 'profile' %}active{% endif %}"><img src="{{ url_for('static', filename='img/profile_tab_icon.png') }}" alt="">Настройки профиля</a>
+    <a href="{{ url_for('my_tariff') }}" class="tab-link {% if request.endpoint == 'my_tariff' %}active{% endif %}"><img src="{{ url_for('static', filename='img/tariff_tab_icon.png') }}" alt="">Мой тариф</a>
+  </div>
+  <div class="balance-card">
+    <span>Баланс</span>
+    <strong>{{ current_user.balance if current_user else 0 }}₽</strong>
+  </div>
+</section>

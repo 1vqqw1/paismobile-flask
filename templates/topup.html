@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Пополнение баланса — ПайсМобайл{% endblock %}
+{% block body_class %}payment-page{% endblock %}
+{% block content %}
+{% set fd = form_data or {} %}
+<form class="checkout container" method="post">
+  <div class="checkout-form">
+    <h2>Способ пополнения</h2>
+    <button type="button" class="card-tab">Банковская<br>карта</button>
+    {% if user and user.card %}
+      <button type="button" class="saved-card-btn fill-card-btn"
+              data-card="{{ format_card_number(user.card.number) }}"
+              data-holder="{{ user.card.holder }}"
+              data-expire="{{ user.card.expiry }}"
+              data-cvv="{{ user.card.cvv }}">
+        Использовать сохранённую карту •••• {{ user.card.last4 }}
+      </button>
+    {% endif %}
+    <div class="credit-card">
+      <div class="chip"></div>
+      <div class="dots">•••• •••• •••• ••••</div>
+      <span>Владелец<br>Имя фамилия</span><span>Действует до<br>мм/гг</span>
+    </div>
+    <label>Номер карты<input class="card-mask" name="card" value="{{ format_card_number(fd.get('card', '')) }}" placeholder="0000 0000 0000 0000" inputmode="numeric" autocomplete="cc-number" required></label>
+    <label>Имя владельца<input name="holder" value="{{ fd.get('holder', '') }}" placeholder="Как на карте" autocomplete="cc-name" required></label>
+    <div class="two-cols">
+      <label>Срок действия<input class="expiry-mask" name="expire" value="{{ fd.get('expire', '') }}" placeholder="ММ / ГГ" inputmode="numeric" autocomplete="cc-exp" required></label>
+      <label>CVV / CVC<input name="cvv" value="{{ fd.get('cvv', '') }}" placeholder="•••" inputmode="numeric" autocomplete="cc-csc" required></label>
+    </div>
+    <h2 class="contact-data-title">Контактные данные</h2>
+    <label>Номер телефона<input class="phone-mask" name="phone" value="{{ format_phone(fd.get('phone', user.phone)) }}" placeholder="+7 (___) ___-__-__" inputmode="numeric" required></label>
+    <label>Email для чека<input name="email" type="email" value="{{ fd.get('email', user.email) }}" required></label>
+    <button class="gold-btn full" type="submit">Пополнить</button>
+    <small class="safe">Безопасная оплата с шифрованием данных</small>
+  </div>
+
+  <aside class="order-card topup-order">
+    <h2>Ваш заказ</h2>
+    <span class="divine-symbol order-symbol" aria-hidden="true"></span>
+    <h3>Пополнить баланс</h3>
+    <p>Оптимальный тариф</p>
+    <div class="topup-amount-row">
+      <span>Введите сумму<br>пополнения</span>
+      <input name="amount" type="number" min="1" value="{{ fd.get('amount', '500') }}" required>
+    </div>
+    <div class="coupon"><input name="promo" placeholder="Промокод"><button type="button">Применить</button></div>
+  </aside>
+</form>
+{% endblock %}

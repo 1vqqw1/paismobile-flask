@@ -1,0 +1,56 @@
+{% set is_available = tariff.id in available_ids %}
+{% set calls_unlimited = '∞' in tariff.calls or 'Безлимит' in tariff.calls %}
+{% set internet_unlimited = '∞' in tariff.internet or 'Безлимит' in tariff.internet %}
+{% set sms_unlimited = '∞' in tariff.sms or 'Безлимит' in tariff.sms %}
+{% set connect_href = url_for('payment', tariff_id=tariff.id) if current_user else url_for('login', next=url_for('payment', tariff_id=tariff.id)) %}
+<article class="tariff-card {% if tariff.badge %}has-badge{% endif %} {% if not is_available %}tariff-unavailable{% endif %}">
+  {% if tariff.badge %}<span class="badge">{{ tariff.badge }}</span>{% endif %}
+  <h3>{{ tariff.name }}</h3>
+  <p class="muted tariff-subtitle">{{ tariff.subtitle }}</p>
+  <div class="price"><span>{{ tariff.price }}</span>{{ tariff.period }}</div>
+  <p class="muted">{{ tariff.price_caption if tariff.price_caption else "Абонентская плата" }}</p>
+  <div class="metrics">
+    <div>
+      {% if tariff.calls == '—' %}
+        <b class="metric-dash">—</b>
+        <small>мин</small>
+      {% elif calls_unlimited %}
+        <b><img class="metric-infinity" src="{{ url_for('static', filename='img/infinity_symbol_black_clean.png') }}" alt="Безлимит"></b>
+        <small>{{ tariff.calls.replace(tariff.calls.split(' ')[0], '', 1).strip() or 'Звонки' }}</small>
+      {% else %}
+        <b>{{ tariff.calls.split(' ')[0] }}</b>
+        <small>{{ tariff.calls.replace(tariff.calls.split(' ')[0], '', 1).strip() }}</small>
+      {% endif %}
+    </div>
+    <div>
+      {% if internet_unlimited %}
+        <b><img class="metric-infinity" src="{{ url_for('static', filename='img/infinity_symbol_black_clean.png') }}" alt="Безлимит"></b>
+      {% else %}
+        <b>{{ tariff.internet.split(' ')[0] }}</b>
+      {% endif %}
+      <small>{{ tariff.internet.replace(tariff.internet.split(' ')[0], '', 1).strip() }}</small>
+    </div>
+    <div>
+      {% if tariff.sms == '—' %}
+        <b class="metric-dash">—</b>
+        <small>SMS</small>
+      {% elif sms_unlimited %}
+        <b><img class="metric-infinity" src="{{ url_for('static', filename='img/infinity_symbol_black_clean.png') }}" alt="Безлимит"></b>
+        <small>{{ tariff.sms.replace(tariff.sms.split(' ')[0], '', 1).strip() or 'SMS' }}</small>
+      {% else %}
+        <b>{{ tariff.sms.split(' ')[0] }}</b>
+        <small>{{ tariff.sms.replace(tariff.sms.split(' ')[0], '', 1).strip() }}</small>
+      {% endif %}
+    </div>
+  </div>
+  <ul class="feature-list">
+    {% for feature in tariff.features %}
+      <li>{{ feature }}</li>
+    {% endfor %}
+  </ul>
+  {% if is_available %}
+    <a class="outline-btn full" href="{{ connect_href }}">Подключить</a>
+  {% else %}
+    <span class="outline-btn full disabled-btn">Недоступно в вашем городе</span>
+  {% endif %}
+</article>

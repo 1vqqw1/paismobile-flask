@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Все тарифы — ПайсМобайл{% endblock %}
+{% block body_class %}tariffs-page{% endblock %}
+{% block content %}
+<section class="hero hero-dark compact">
+  <p class="kicker">Мобильная связь</p>
+  <h1>Все тарифы</h1>
+  <p>Выберите подходящий тарифный план для вашего города и потребностей</p>
+</section>
+
+<section class="container page-tabs">
+  <a class="active" href="{{ url_for('tariffs', city=city_name) }}">Все тарифы</a>
+  <a href="{{ url_for('actions') }}">Акции</a>
+  <a href="{{ url_for('cities') }}">Выбрать город</a>
+  <form class="city-inline" method="get">
+    <label>Город:</label>
+    <input type="hidden" name="minutes" value="{{ minutes }}">
+    <input type="hidden" name="internet" value="{{ internet }}">
+    <input type="hidden" name="sms" value="{{ sms }}">
+    <select name="city" onchange="this.form.submit()">
+      {% for name in city_names %}
+        <option value="{{ name }}" {% if name == city_name %}selected{% endif %}>{{ name }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</section>
+
+<section class="container section no-top">
+  <div class="tariff-grid">
+    {% for tariff in tariffs %}
+      {% include '_tariff_card.html' %}
+    {% endfor %}
+  </div>
+</section>
+
+<section class="container constructor">
+  <h2>Соберите свой тариф</h2>
+  <p>Настройте параметры под свои потребности и узнайте стоимость</p>
+  <form class="constructor-form constructor-live" method="get" data-base="160" data-minute="0.32" data-internet="5" data-sms="0.6">
+    <input type="hidden" name="city" value="{{ city_name }}">
+    <label>Минуты <output data-output="minutes"><strong>{{ minutes }}</strong><span>мин</span></output><input name="minutes" type="range" min="100" max="1000" step="100" value="{{ minutes }}"></label>
+    <label>Интернет <output data-output="internet"><strong>{{ internet }}</strong><span>ГБ</span></output><input name="internet" type="range" min="5" max="80" step="5" value="{{ internet }}"></label>
+    <label>SMS <output data-output="sms"><strong>{{ sms }}</strong><span>шт</span></output><input name="sms" type="range" min="0" max="300" step="50" value="{{ sms }}"></label>
+    <div class="constructor-result"><strong data-output="price">{{ total_price }}</strong> ₽/мес<br><span>Индивидуальный тариф</span><a class="gold-btn" href="{{ url_for('payment', tariff_id='serafim') if current_user else url_for('login', next=url_for('payment', tariff_id='serafim')) }}">Подключить свой тариф</a></div>
+  </form>
+</section>
+{% endblock %}

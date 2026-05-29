@@ -1,0 +1,37 @@
+[
+  {
+    "id": 1,
+    "first_name": "Александр",
+    "last_name": "Королёв",
+    "phone": "+79991234567",
+    "email": "alex@example.com",
+    "password_hash": "pbkdf2_sha256$demo_salt$52cd53fd48392758cdb333303b8e50a94025604f80dc03100822742574e0276a",
+    "city": "Москва",
+    "birth_date": "",
+    "gender": "",
+    "balance": 847,
+    "active_tariff": "arkhangel",
+    "created_at": "2026-03-11",
+    "tariff_history": [
+      {
+        "date": "11.03.2026 12:00:00",
+        "tz": "UTC+3",
+        "action": "Подключён",
+        "tariff_name": "Архангел",
+        "tariff_id": "arkhangel",
+        "price": 690
+      }
+    ],
+    "extra_gb": 0,
+    "promotions": [],
+    "card": {
+      "number": "0000000000004521",
+      "holder": "ALEKSANDR KOROLEV",
+      "expiry": "12/29",
+      "cvv": "123",
+      "last4": "4521"
+    },
+    "pending_cashback": [],
+    "sub_type": "Обычный"
+  }
+]

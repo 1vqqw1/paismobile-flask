@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Настройки профиля — ПайсМобайл{% endblock %}
+{% block body_class %}cabinet-page profile-page{% endblock %}
+{% block content %}
+{% include '_cabinet_tabs.html' %}
+
+<section class="container cabinet-title">
+  <h1>Настройки профиля</h1>
+</section>
+
+<form method="post" class="container profile-form" novalidate>
+  <section class="white-panel">
+    <h2>Личная информация</h2>
+    <div class="two-cols">
+      <label>Имя<input name="first_name" value="{{ user.first_name }}"></label>
+      <label>Фамилия<input name="last_name" value="{{ user.last_name }}"></label>
+    </div>
+    <div class="two-cols">
+      <label>Дата рождения<input name="birth_date" type="date" value="{{ user.birth_date }}"></label>
+      <label>Пол<select name="gender"><option value="">—</option><option {% if user.gender == 'Мужской' %}selected{% endif %}>Мужской</option><option {% if user.gender == 'Женский' %}selected{% endif %}>Женский</option></select></label>
+    </div>
+  </section>
+
+  <section class="white-panel">
+    <h2>Контактные данные</h2>
+    <label>Номер телефона<input class="phone-mask" name="phone" value="{{ format_phone(user.phone) }}" placeholder="+7 (___) ___-__-__" inputmode="numeric"></label>
+    <label>Email<input name="email" type="email" value="{{ user.email }}"></label>
+    <label>Город<select name="city"><option value="">Выберите город</option>{% for city in cities %}<option value="{{ city }}" {% if city == user.city %}selected{% endif %}>{{ city }}</option>{% endfor %}</select></label>
+  </section>
+
+  <section class="white-panel">
+    <h2>Безопасность</h2>
+    <div class="three-inputs">
+      <label>Текущий пароль<input name="current_password" type="password" placeholder="••••••••"></label>
+      <label>Новый пароль<input name="new_password" type="password" placeholder="Минимум 8 символов"></label>
+      <label>Подтвердите<input name="password_confirm" type="password" placeholder="Повторите пароль"></label>
+    </div>
+  </section>
+
+  <section class="white-panel">
+    <h2>История тарифов</h2>
+    {% if user.tariff_history %}
+      {% for item in user.tariff_history[-1:] %}
+      <div class="three-inputs readonly-line">
+        <label>Дата<input value="{{ item.date }}" readonly></label>
+        <label>Состояние<input value="{{ item.action }}" readonly></label>
+        <label>Тариф и цена<input value="{{ item.tariff_name }}/{{ item.price }}₽" readonly></label>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="three-inputs readonly-line">
+        <label>Дата<input value="{{ user.created_at }}" readonly></label>
+        <label>Состояние<input value="Нет подключений" readonly></label>
+        <label>Тариф и цена<input value="—" readonly></label>
+      </div>
+    {% endif %}
+  </section>
+
+  <div class="form-buttons"><a class="ghost-btn" href="{{ url_for('my_tariff') }}">Отменить</a><button class="gold-btn" type="submit">Сохранить изменения</button></div>
+</form>
+{% endblock %}

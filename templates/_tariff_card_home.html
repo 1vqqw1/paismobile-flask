@@ -1,0 +1,13 @@
+<article class="tariff-card home-tariff-card {% if tariff.badge %}has-badge{% endif %}">
+  {% if tariff.badge %}<span class="badge home-badge">{{ tariff.badge }}</span>{% endif %}
+  <h3>{{ tariff.name }}</h3>
+  <p class="muted tariff-subtitle">{{ tariff.subtitle }}</p>
+  <div class="price"><span>{{ tariff.price }}</span>{{ tariff.period }}</div>
+  <p class="muted">Абонентская плата</p>
+  <ul class="feature-list compact-features">
+    {% for feature in tariff.features %}
+      <li>{{ feature }}</li>
+    {% endfor %}
+  </ul>
+  <a class="{% if tariff.id == 'arkhangel' %}gold-btn{% else %}outline-btn{% endif %} full" href="{{ url_for('payment', tariff_id=tariff.id) }}">Подключить</a>
+</article>
