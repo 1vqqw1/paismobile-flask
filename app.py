@@ -1,12 +1,27 @@
 from functools import wraps
 from datetime import datetime, timedelta
 
+from flask_swagger_ui import get_swaggerui_blueprint
+
 from flask import Flask, flash, jsonify, redirect, render_template, request, session, url_for
 
 from services.models import CityBook, PaymentBook, Promo, SubscriberBook, Tariff, check_card
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "paismobile-lab-secret-key"
+
+SWAGGER_URL = "/swagger"
+API_URL = "/static/swagger.json"
+
+swaggerui_blueprint = get_swaggerui_blueprint(
+    SWAGGER_URL,
+    API_URL,
+    config={
+        "app_name": "ПайсМобайл API"
+    }
+)
+
+app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 
 users = SubscriberBook()
 cities_book = CityBook()

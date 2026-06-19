@@ -1,0 +1,1491 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ПайсМобайл — фактическая API-документация",
+    "version": "1.0.0",
+    "description": "Документация составлена по фактическому коду Flask-приложения. Большинство маршрутов возвращает HTML или HTTP 302, не REST JSON. JSON-ответы есть у PUT /select-city/{city}, PUT /profile, PUT /save-card, DELETE /delete-card и DELETE /cancel-tariff."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:5001",
+      "description": "Локальный запуск Flask-приложения"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Публичные страницы",
+      "description": "Маршруты, доступные без авторизации."
+    },
+    {
+      "name": "Авторизация",
+      "description": "Вход, выход, регистрация и восстановление доступа."
+    },
+    {
+      "name": "Города и тарифы",
+      "description": "Выбор города, список тарифов, конструктор тарифа."
+    },
+    {
+      "name": "Акции",
+      "description": "Промокоды и активация акций."
+    },
+    {
+      "name": "Кабинет",
+      "description": "Защищённые маршруты личного кабинета."
+    },
+    {
+      "name": "Оплата",
+      "description": "Оплата тарифа, пополнение баланса, сохранение карты."
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "session",
+        "description": "Стандартная подписанная Flask session-cookie. Получается после успешного POST /login или POST /register."
+      }
+    },
+    "schemas": {
+      "JsonResponse": {
+        "type": "object",
+        "required": [
+          "ok",
+          "message"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Настройки профиля сохранены."
+          },
+          "city": {
+            "type": "string",
+            "example": "Москва",
+            "description": "Возвращается в /select-city/{city}."
+          },
+          "last4": {
+            "type": "string",
+            "example": "1111",
+            "description": "Возвращается при сохранении карты."
+          }
+        }
+      },
+      "LoginForm": {
+        "type": "object",
+        "required": [
+          "login",
+          "password"
+        ],
+        "properties": {
+          "login": {
+            "type": "string",
+            "description": "Телефон или email пользователя.",
+            "example": "alex@example.com"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "example": "Password!1"
+          }
+        }
+      },
+      "RegisterForm": {
+        "type": "object",
+        "required": [
+          "first_name",
+          "last_name",
+          "phone",
+          "email",
+          "password",
+          "password_confirm",
+          "city"
+        ],
+        "properties": {
+          "first_name": {
+            "type": "string",
+            "description": "Только русские буквы, без пробелов, дефисов и латиницы.",
+            "example": "Иван"
+          },
+          "last_name": {
+            "type": "string",
+            "description": "Только русские буквы, без пробелов, дефисов и латиницы.",
+            "example": "Иванов"
+          },
+          "phone": {
+            "type": "string",
+            "description": "После нормализации должен получиться формат +7XXXXXXXXXX. Допускается ввод через 8XXXXXXXXXX.",
+            "example": "+79991234567"
+          },
+          "email": {
+            "type": "string",
+            "description": "Фактическая проверка: непустое значение и наличие символа @.",
+            "example": "ivan@example.com"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "8–20 символов, минимум одна строчная латинская буква, одна заглавная латинская буква и один спецсимвол.",
+            "example": "Password!1"
+          },
+          "password_confirm": {
+            "type": "string",
+            "format": "password",
+            "example": "Password!1"
+          },
+          "city": {
+            "type": "string",
+            "description": "Город должен быть в справочнике data/cities.json.",
+            "example": "Москва"
+          }
+        }
+      },
+      "ForgotForm": {
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Фактически проверяется только непустота.",
+            "example": "ivan@example.com"
+          }
+        }
+      },
+      "PromoCodeForm": {
+        "type": "object",
+        "properties": {
+          "promo": {
+            "type": "string",
+            "description": "Любой непустой промокод считается принятым. Пустое значение даёт warning.",
+            "example": "SALE2026"
+          },
+          "promo_id": {
+            "type": "string",
+            "description": "ID акции. Если указан, приоритетнее поля promo.",
+            "example": "3"
+          },
+          "friend_phone": {
+            "type": "string",
+            "description": "Используется акцией cashback.",
+            "example": "+79990001122"
+          }
+        }
+      },
+      "CardForm": {
+        "type": "object",
+        "required": [
+          "card",
+          "holder",
+          "expire",
+          "cvv"
+        ],
+        "properties": {
+          "card": {
+            "type": "string",
+            "description": "16 цифр. В форме оплаты пробелы игнорируются; в save-card пробелы и дефисы удаляются.",
+            "example": "4111111111111111"
+          },
+          "holder": {
+            "type": "string",
+            "description": "Фактически проверяется только непустота.",
+            "example": "IVAN IVANOV"
+          },
+          "expire": {
+            "type": "string",
+            "description": "Формат ММ/ГГ, месяц 01–12, дата не должна быть в прошлом.",
+            "example": "12/30"
+          },
+          "cvv": {
+            "type": "string",
+            "description": "Ровно 3 цифры.",
+            "example": "123"
+          }
+        }
+      },
+      "PaymentForm": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CardForm"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "phone": {
+                "type": "string",
+                "description": "Телефон для чека. На backend отдельно не валидируется.",
+                "example": "+79991234567"
+              },
+              "email": {
+                "type": "string",
+                "description": "Email для чека. На backend отдельно не валидируется.",
+                "example": "alex@example.com"
+              }
+            }
+          }
+        ]
+      },
+      "TopupForm": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CardForm"
+          },
+          {
+            "type": "object",
+            "required": [
+              "amount"
+            ],
+            "properties": {
+              "amount": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Сумма пополнения. Должна быть больше 0.",
+                "example": 500
+              },
+              "phone": {
+                "type": "string",
+                "example": "+79991234567"
+              },
+              "email": {
+                "type": "string",
+                "example": "alex@example.com"
+              },
+              "promo": {
+                "type": "string",
+                "description": "Есть в HTML-форме, но backend не обрабатывает это поле.",
+                "example": "SALE2026"
+              }
+            }
+          }
+        ]
+      },
+      "ProfileUpdate": {
+        "type": "object",
+        "required": [
+          "first_name",
+          "last_name",
+          "phone",
+          "email",
+          "city"
+        ],
+        "properties": {
+          "first_name": {
+            "type": "string",
+            "example": "Иван"
+          },
+          "last_name": {
+            "type": "string",
+            "example": "Иванов"
+          },
+          "birth_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Сохраняется как строка. Возраст и будущая дата не валидируются профилем.",
+            "example": "2000-01-01"
+          },
+          "gender": {
+            "type": "string",
+            "description": "Сохраняется как строка, допустимые значения backend не проверяет.",
+            "example": "Мужской"
+          },
+          "phone": {
+            "type": "string",
+            "example": "+79991234567"
+          },
+          "email": {
+            "type": "string",
+            "example": "ivan@example.com"
+          },
+          "city": {
+            "type": "string",
+            "example": "Москва"
+          },
+          "current_password": {
+            "type": "string",
+            "format": "password",
+            "description": "Нужен только если меняется пароль. Если пустой, старый пароль фактически не проверяется.",
+            "example": "OldPassword!1"
+          },
+          "new_password": {
+            "type": "string",
+            "format": "password",
+            "description": "Если указан, запускается смена пароля с проверкой правил.",
+            "example": "NewPassword!1"
+          },
+          "password_confirm": {
+            "type": "string",
+            "format": "password",
+            "example": "NewPassword!1"
+          }
+        }
+      },
+      "BuyGbForm": {
+        "type": "object",
+        "required": [
+          "gb"
+        ],
+        "properties": {
+          "gb": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Количество ГБ. Стоимость = gb * 50 ₽.",
+            "example": 2
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "Публичные страницы"
+        ],
+        "summary": "Главная страница",
+        "description": "Возвращает HTML главной страницы и 3 featured-тарифа: serafim, arkhangel, prestol.",
+        "responses": {
+          "200": {
+            "description": "HTML-страница успешно сформирована.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "<!doctype html><html lang=\"ru\">...</html>"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tariffs": {
+      "get": {
+        "tags": [
+          "Города и тарифы"
+        ],
+        "summary": "Страница тарифов и конструктор тарифа",
+        "description": "Возвращает HTML со всеми тарифами, выбранным городом, доступностью тарифов по городу и расчётом цены конструктора. При наличии query-параметра city он сохраняется в сессию selected_city.",
+        "parameters": [
+          {
+            "name": "city",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "Москва"
+            },
+            "description": "Выбранный город. Если не передан: берётся город пользователя, затем selected_city из сессии, затем Москва."
+          },
+          {
+            "name": "minutes",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 500,
+              "example": 500
+            },
+            "description": "Минуты в конструкторе. Невалидное значение заменяется на 500."
+          },
+          {
+            "name": "internet",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "example": 20
+            },
+            "description": "ГБ в конструкторе. Невалидное значение заменяется на 20."
+          },
+          {
+            "name": "sms",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "example": 100
+            },
+            "description": "SMS в конструкторе. Невалидное значение заменяется на 100."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML-страница успешно сформирована.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "<!doctype html><html lang=\"ru\">...</html>"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cities": {
+      "get": {
+        "tags": [
+          "Города и тарифы"
+        ],
+        "summary": "Страница выбора города",
+        "description": "Возвращает HTML со справочником городов, сгруппированных по регионам. Поиск q выполняется как подстрока по названию города и области в нижнем регистре.",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "мос"
+            },
+            "description": "Строка поиска."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML-страница успешно сформирована.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "<!doctype html><html lang=\"ru\">...</html>"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/select-city/{city}": {
+      "get": {
+        "tags": [
+          "Города и тарифы"
+        ],
+        "summary": "Выбор города через ссылку",
+        "description": "Сохраняет city в сессию selected_city. Если пользователь авторизован, обновляет город в профиле без проверки, что город есть в справочнике. Возвращает redirect на Referer или /cities.",
+        "parameters": [
+          {
+            "name": "city",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Москва"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Перенаправление браузера. Фактическая цель зависит от сценария: next, profile, my-tariff, login, tariffs и т.д.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Города и тарифы"
+        ],
+        "summary": "Выбор города с JSON-ответом",
+        "description": "То же действие, что GET, но возвращает JSON. Авторизация не обязательна.",
+        "parameters": [
+          {
+            "name": "city",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Москва"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Город сохранён в сессии.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonResponse"
+                },
+                "example": {
+                  "ok": true,
+                  "message": "Выбран город: Москва.",
+                  "city": "Москва"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/actions": {
+      "get": {
+        "tags": [
+          "Акции"
+        ],
+        "summary": "Страница акций",
+        "description": "Возвращает HTML со списком акций из data/promos.json. Кнопки истёкших акций отключены только на уровне интерфейса; backend отдельно expired не проверяет.",
+        "responses": {
+          "200": {
+            "description": "HTML-страница успешно сформирована.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "<!doctype html><html lang=\"ru\">...</html>"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Акции"
+        ],
+        "summary": "Активация акции или промокода",
+        "description": "Если передан promo_id, приложение пытается активировать акцию и требует авторизацию. Если promo_id пустой, но promo непустой — любой промокод принимается. Ответ всегда через flash + redirect, JSON не возвращается.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PromoCodeForm"
+              }
+            }
+          }
+        },
+        "responses": {
+          "302": {
+            "description": "Перенаправление браузера. Фактическая цель зависит от сценария: next, profile, my-tariff, login, tariffs и т.д.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/login": {
+      "get": {
+        "tags": [
+          "Авторизация"
+        ],
+        "summary": "Форма входа",
+        "description": "Возвращает HTML-форму входа.",
+        "responses": {
+          "200": {
+            "description": "HTML-страница успешно сформирована.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "<!doctype html><html lang=\"ru\">...</html>"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Авторизация"
+        ],
+        "summary": "Вход в личный кабинет",
+        "description": "Ищет пользователя по email или телефону, проверяет пароль и записывает user_id в Flask-сессию. При успехе redirect на query next или /my-tariff. При ошибке возвращает HTML формы входа со статусом 200.",
+        "parameters": [
+          {
+            "name": "next",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "/profile"
+            },
+            "description": "Куда перенаправить после успешного входа."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginForm"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "HTML-страница успешно сформирована.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "<!doctype html><html lang=\"ru\">...</html>"
+              }
+            }
+          },
+          "302": {
+            "description": "Перенаправление браузера. Фактическая цель зависит от сценария: next, profile, my-tariff, login, tariffs и т.д.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/logout": {
+      "get": {
+        "tags": [
+          "Авторизация"
+        ],
+        "summary": "Выход",
+        "description": "Очищает Flask-сессию и перенаправляет на главную.",
+        "responses": {
+          "302": {
+            "description": "Перенаправление браузера. Фактическая цель зависит от сценария: next, profile, my-tariff, login, tariffs и т.д.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/register": {
+      "get": {
+        "tags": [
+          "Авторизация"
+        ],
+        "summary": "Форма регистрации",
+        "description": "Возвращает HTML-форму регистрации и список городов.",
+        "responses": {
+          "200": {
+            "description": "HTML-страница успешно сформирована.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "<!doctype html><html lang=\"ru\">...</html>"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Авторизация"
+        ],
+        "summary": "Регистрация пользователя",
+        "description": "Создаёт пользователя в data/users.json. При успехе записывает user_id в сессию и перенаправляет на query next или /profile. При ошибке возвращает HTML формы со статусом 200.",
+        "parameters": [
+          {
+            "name": "next",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "/payment/serafim"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterForm"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "HTML-страница успешно сформирована.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "<!doctype html><html lang=\"ru\">...</html>"
+              }
+            }
+          },
+          "302": {
+            "description": "Перенаправление браузера. Фактическая цель зависит от сценария: next, profile, my-tariff, login, tariffs и т.д.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/forgot": {
+      "get": {
+        "tags": [
+          "Авторизация"
+        ],
+        "summary": "Форма восстановления пароля",
+        "description": "Возвращает HTML-форму восстановления.",
+        "responses": {
+          "200": {
+            "description": "HTML-страница успешно сформирована.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "<!doctype html><html lang=\"ru\">...</html>"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Авторизация"
+        ],
+        "summary": "Запрос восстановления пароля",
+        "description": "Если email непустой — показывает сообщение об отправке инструкций и перенаправляет на /login. Реальной отправки email нет. Если email пустой — возвращает HTML формы со статусом 200.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotForm"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "HTML-страница успешно сформирована.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "<!doctype html><html lang=\"ru\">...</html>"
+              }
+            }
+          },
+          "302": {
+            "description": "Перенаправление браузера. Фактическая цель зависит от сценария: next, profile, my-tariff, login, tariffs и т.д.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/profile": {
+      "get": {
+        "tags": [
+          "Кабинет"
+        ],
+        "summary": "Профиль пользователя",
+        "description": "Возвращает HTML личных данных пользователя, историю тарифов и форму смены пароля.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML-страница успешно сформирована.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "<!doctype html><html lang=\"ru\">...</html>"
+              }
+            }
+          },
+          "302": {
+            "description": "Пользователь не авторизован. Flask добавляет flash-сообщение и перенаправляет на /login?next=<исходный_путь>.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "example": "/login?next=/profile"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Кабинет"
+        ],
+        "summary": "Обновление профиля через HTML-форму",
+        "description": "Обновляет профиль, при наличии new_password меняет пароль. Все ошибки передаются через flash и redirect/HTML, JSON не возвращается.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "302": {
+            "description": "Перенаправление браузера. Фактическая цель зависит от сценария: next, profile, my-tariff, login, tariffs и т.д.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Кабинет"
+        ],
+        "summary": "Обновление профиля с JSON-ответом",
+        "description": "Принимает JSON или form-urlencoded. При ошибке возвращает JSON с ok=false и HTTP 400. Если new_password указан, дополнительно проверяет current_password, правила нового пароля и совпадение подтверждения.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdate"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный JSON-ответ.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации или бизнес-правила.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonResponse"
+                }
+              }
+            }
+          },
+          "302": {
+            "description": "Пользователь не авторизован. Flask добавляет flash-сообщение и перенаправляет на /login?next=<исходный_путь>.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "example": "/login?next=/profile"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/my-tariff": {
+      "get": {
+        "tags": [
+          "Кабинет"
+        ],
+        "summary": "Мой тариф",
+        "description": "Возвращает HTML текущего тарифа, баланс, extra_gb, последнюю оплату тарифа и дату следующего списания. Если тарифа нет — показывает состояние без подключения.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML-страница успешно сформирована.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "<!doctype html><html lang=\"ru\">...</html>"
+              }
+            }
+          },
+          "302": {
+            "description": "Пользователь не авторизован. Flask добавляет flash-сообщение и перенаправляет на /login?next=<исходный_путь>.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "example": "/login?next=/profile"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/payment/{tariff_id}": {
+      "get": {
+        "tags": [
+          "Оплата"
+        ],
+        "summary": "Форма оплаты тарифа",
+        "description": "Требует авторизацию. Проверяет существование tariff_id и доступность тарифа в выбранном городе. Если тариф неизвестен — 404 HTML. Если недоступен в городе — redirect на /tariffs?city=... .",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tariff_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "vestnik",
+                "serafim",
+                "kheruvim",
+                "arkhangel",
+                "prestol",
+                "nefilim"
+              ]
+            },
+            "example": "serafim"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML-страница успешно сформирована.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "<!doctype html><html lang=\"ru\">...</html>"
+              }
+            }
+          },
+          "302": {
+            "description": "Перенаправление браузера. Фактическая цель зависит от сценария: next, profile, my-tariff, login, tariffs и т.д.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Тариф не найден, HTML 404."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Оплата"
+        ],
+        "summary": "Оплата и подключение тарифа",
+        "description": "Валидирует карту, добавляет запись kind=tariff в payments.json, сохраняет карту пользователю, подключает тариф и перенаправляет на /my-tariff. phone/email для чека записываются в платеж, но отдельно не валидируются. Промокод с формы payment.html на backend не отправляется.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tariff_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "serafim"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentForm"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "HTML-страница успешно сформирована.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "<!doctype html><html lang=\"ru\">...</html>"
+              }
+            }
+          },
+          "302": {
+            "description": "Перенаправление браузера. Фактическая цель зависит от сценария: next, profile, my-tariff, login, tariffs и т.д.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Тариф не найден, HTML 404."
+          }
+        }
+      }
+    },
+    "/topup": {
+      "get": {
+        "tags": [
+          "Оплата"
+        ],
+        "summary": "Форма пополнения баланса",
+        "description": "Возвращает HTML-форму пополнения баланса.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML-страница успешно сформирована.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "<!doctype html><html lang=\"ru\">...</html>"
+              }
+            }
+          },
+          "302": {
+            "description": "Пользователь не авторизован. Flask добавляет flash-сообщение и перенаправляет на /login?next=<исходный_путь>.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "example": "/login?next=/profile"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Оплата"
+        ],
+        "summary": "Пополнение баланса",
+        "description": "amount должен быть больше 0. Затем валидируется карта. При успехе добавляется payment kind=topup, карта сохраняется, баланс увеличивается, выполняется redirect на /my-tariff. Поле promo присутствует в HTML, но backend его не обрабатывает.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/TopupForm"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "HTML-страница успешно сформирована.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "<!doctype html><html lang=\"ru\">...</html>"
+              }
+            }
+          },
+          "302": {
+            "description": "Перенаправление браузера. Фактическая цель зависит от сценария: next, profile, my-tariff, login, tariffs и т.д.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/save-card": {
+      "post": {
+        "tags": [
+          "Оплата",
+          "Кабинет"
+        ],
+        "summary": "Сохранение карты через HTML-форму",
+        "description": "Сохраняет карту в профиле. При ошибке показывает flash. Возвращает redirect на /profile.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/CardForm"
+              }
+            }
+          }
+        },
+        "responses": {
+          "302": {
+            "description": "Перенаправление браузера. Фактическая цель зависит от сценария: next, profile, my-tariff, login, tariffs и т.д.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Оплата",
+          "Кабинет"
+        ],
+        "summary": "Сохранение карты с JSON-ответом",
+        "description": "Принимает JSON или form-urlencoded. Проверяет карту и сохраняет её в профиле пользователя. При успехе возвращает last4.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CardForm"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/CardForm"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Карта сохранена.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonResponse"
+                },
+                "example": {
+                  "ok": true,
+                  "message": "Карта сохранена.",
+                  "last4": "1111"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ошибка валидации или бизнес-правила.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonResponse"
+                }
+              }
+            }
+          },
+          "302": {
+            "description": "Пользователь не авторизован. Flask добавляет flash-сообщение и перенаправляет на /login?next=<исходный_путь>.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "example": "/login?next=/profile"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/delete-card": {
+      "post": {
+        "tags": [
+          "Оплата",
+          "Кабинет"
+        ],
+        "summary": "Удаление карты через HTML-форму",
+        "description": "Удаляет карту пользователя и перенаправляет на /profile.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Перенаправление браузера. Фактическая цель зависит от сценария: next, profile, my-tariff, login, tariffs и т.д.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Оплата",
+          "Кабинет"
+        ],
+        "summary": "Удаление карты с JSON-ответом",
+        "description": "Удаляет карту пользователя. Даже если карты не было, возвращает успешный ответ.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Карта удалена.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonResponse"
+                },
+                "example": {
+                  "ok": true,
+                  "message": "Карта удалена."
+                }
+              }
+            }
+          },
+          "302": {
+            "description": "Пользователь не авторизован. Flask добавляет flash-сообщение и перенаправляет на /login?next=<исходный_путь>.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "example": "/login?next=/profile"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/buy-gb": {
+      "post": {
+        "tags": [
+          "Кабинет"
+        ],
+        "summary": "Покупка дополнительных ГБ",
+        "description": "Покупает дополнительные гигабайты за счёт баланса. Стоимость = gb * 50 ₽. При ошибках возвращает flash и redirect на /my-tariff, HTTP 400 не используется.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/BuyGbForm"
+              }
+            }
+          }
+        },
+        "responses": {
+          "302": {
+            "description": "Перенаправление браузера. Фактическая цель зависит от сценария: next, profile, my-tariff, login, tariffs и т.д.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cancel-tariff": {
+      "post": {
+        "tags": [
+          "Кабинет"
+        ],
+        "summary": "Отключение тарифа через HTML-форму",
+        "description": "Отключает активный тариф, если он есть. Результат через flash + redirect на /my-tariff.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Перенаправление браузера. Фактическая цель зависит от сценария: next, profile, my-tariff, login, tariffs и т.д.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Кабинет"
+        ],
+        "summary": "Отключение тарифа с JSON-ответом",
+        "description": "Если тариф был подключён — отключает его и возвращает ok=true. Если тарифа нет — ok=false и HTTP 400.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Тариф отключён.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonResponse"
+                },
+                "example": {
+                  "ok": true,
+                  "message": "Тариф отключён."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "У пользователя нет подключённого тарифа.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonResponse"
+                },
+                "example": {
+                  "ok": false,
+                  "message": "У вас нет подключённого тарифа."
+                }
+              }
+            }
+          },
+          "302": {
+            "description": "Пользователь не авторизован. Flask добавляет flash-сообщение и перенаправляет на /login?next=<исходный_путь>.",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "example": "/login?next=/profile"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "x-paismobile-notes": {
+    "tariffAvailabilityByCity": {
+      "Москва": [
+        "vestnik",
+        "serafim",
+        "kheruvim",
+        "arkhangel",
+        "prestol",
+        "nefilim"
+      ],
+      "Сочи": [
+        "serafim",
+        "kheruvim",
+        "arkhangel",
+        "prestol",
+        "nefilim"
+      ],
+      "Мурманск": [
+        "vestnik",
+        "serafim",
+        "arkhangel"
+      ]
+    },
+    "constructorPriceFormula": "round(160 + minutes * 0.32 + internet * 5 + sms * 0.6)",
+    "auth": "Flask session cookie. Для защищённых маршрутов сначала выполните вход через POST /login в том же браузере."
+  }
+}
